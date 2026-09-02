@@ -115,10 +115,12 @@ local function onDownloadChange(paths)
   end
 end
 
-local dlWatchers = {}
+-- GLOBAL on purpose (no `local`): otherwise the pathwatcher gets garbage-collected
+-- and stops firing after the first event. Keep a permanent reference alive.
+WA_TRANSCRIBE_WATCHERS = {}
 for _, dir in ipairs(WATCH_DIRS) do
   local w = hs.pathwatcher.new(dir, onDownloadChange)
-  if w then w:start(); table.insert(dlWatchers, w) end
+  if w then w:start(); table.insert(WA_TRANSCRIBE_WATCHERS, w) end
 end
 
 hs.alert.show("WhatsApp → Text ready · right-click a note → Save to Downloads", 3)
