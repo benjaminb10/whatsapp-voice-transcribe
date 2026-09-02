@@ -1,0 +1,3 @@
+# the Whisper model is downloaded by install.sh, not committed
+models/*.bin
+.DS_Store
