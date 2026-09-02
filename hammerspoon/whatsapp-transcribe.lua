@@ -4,12 +4,12 @@
 --  Load it from your ~/.hammerspoon/init.lua with:
 --      dofile(os.getenv("HOME") .. "/path/to/whatsapp-voice-transcribe/hammerspoon/whatsapp-transcribe.lua")
 --
---  MAIN UX: in WhatsApp, right-click a voice note → "Save to Downloads".
+--  HOW IT WORKS: in WhatsApp, right-click a voice note → "Save to Downloads".
 --  The moment the .opus lands in Downloads, it is transcribed automatically:
 --  a floating bubble shows the text and it is copied to your clipboard.
 --  The file is kept (you decide whether to delete it).
 --
---  BONUS: ⌘⌥T transcribes the most recently received note without any click.
+--  Only permission required: Full Disk Access (to read the saved note).
 -- ============================================================
 
 local HOME = os.getenv("HOME")
@@ -19,18 +19,13 @@ local selfPath = debug.getinfo(1, "S").source:sub(2)
 local hereDir  = selfPath:match("(.*/)") or "./"
 local BIN      = hereDir .. "../bin/"
 local SH_TRANSCRIBE = BIN .. "transcribe.sh"
-local SH_LATEST     = BIN .. "latest-opus.sh"
 
 -- ---- config ----
-local LANG        = "auto"                                  -- "auto", "en", "fr", "es", ...
-local WATCH_DIRS  = { HOME .. "/Downloads", HOME .. "/Desktop" }
-local MEDIA       = HOME .. "/Library/Group Containers/group.net.whatsapp.WhatsApp.shared/Message/Media"
-local AUDIO_EXT   = { opus=true, m4a=true, mp3=true, wav=true, ogg=true, caf=true, aac=true, amr=true }
-local HOTKEY_MODS = { "cmd", "alt" }
-local HOTKEY_KEY  = "T"
+local LANG       = "auto"                              -- "auto", "en", "fr", "es", ...
+local WATCH_DIRS = { HOME .. "/Downloads", HOME .. "/Desktop" }
+local AUDIO_EXT  = { opus=true, m4a=true, mp3=true, wav=true, ogg=true, caf=true, aac=true, amr=true }
 
 -- ---- state ----
-local lastOpus, lastOpusTime = nil, nil
 local bubble, runningTask
 local handled = {}
 
@@ -125,29 +120,5 @@ for _, dir in ipairs(WATCH_DIRS) do
   local w = hs.pathwatcher.new(dir, onDownloadChange)
   if w then w:start(); table.insert(dlWatchers, w) end
 end
-
--- ---- remember the latest received note (for the ⌘⌥T shortcut) ----
-if hs.fs.attributes(MEDIA) then
-  hs.pathwatcher.new(MEDIA, function(paths)
-    for _, p in ipairs(paths) do
-      if p:sub(-5) == ".opus" then
-        local a = hs.fs.attributes(p)
-        if a and (not lastOpusTime or a.modification >= lastOpusTime) then
-          lastOpus, lastOpusTime = p, a.modification
-        end
-      end
-    end
-  end):start()
-end
-
-local function transcribeLatest()
-  if lastOpus then transcribe(lastOpus)
-  else
-    hs.alert.show("Looking for the latest note…", 1)
-    hs.task.new("/bin/bash", function(_, stdout) transcribe(trim(stdout)) end, { SH_LATEST }):start()
-  end
-end
-
-hs.hotkey.bind(HOTKEY_MODS, HOTKEY_KEY, transcribeLatest)
 
 hs.alert.show("WhatsApp → Text ready · right-click a note → Save to Downloads", 3)

@@ -36,9 +36,8 @@ cat <<EOF
 
      dofile("$REPO/hammerspoon/whatsapp-transcribe.lua")
 
-2) Launch Hammerspoon, then grant it (System Settings → Privacy & Security):
-     • Accessibility        (for the ⌘⌥T shortcut)
-     • Full Disk Access     (to read WhatsApp voice notes)
+2) Launch Hammerspoon, then grant it Full Disk Access
+   (System Settings → Privacy & Security → Full Disk Access → add Hammerspoon).
    Then: Hammerspoon menu-bar icon → Reload Config.
 
 3) In WhatsApp, right-click a voice note → "Save to Downloads".

@@ -68,18 +68,15 @@ Then:
    dofile(os.getenv("HOME") .. "/whatsapp-voice-transcribe/hammerspoon/whatsapp-transcribe.lua")
    ```
    *(adjust the path to wherever you cloned it)*
-2. Launch **Hammerspoon**, and grant it in **System Settings → Privacy & Security**:
-   - **Accessibility** — for the ⌘⌥T shortcut
-   - **Full Disk Access** — to read WhatsApp voice notes
+2. Launch **Hammerspoon**, and grant it **Full Disk Access** in
+   **System Settings → Privacy & Security** (needed to read the saved note).
    Then click the Hammerspoon menu-bar icon → **Reload Config**.
 
 ## Usage
 
-- **Pick any note:** right-click it in WhatsApp → **Save to Downloads** → the
-  text appears and is copied. The `.opus` file stays in Downloads (yours to keep
-  or delete).
-- **Quick shortcut:** press **⌘⌥T** to transcribe the *latest* received note
-  without any click.
+**Pick any note:** right-click it in WhatsApp → **Save to Downloads** → the text
+appears in a floating bubble and is copied to your clipboard. The `.opus` file
+stays in Downloads (yours to keep or delete).
 
 ## Configuration
 
@@ -87,7 +84,6 @@ Edit the top of `hammerspoon/whatsapp-transcribe.lua`:
 
 - `LANG` — `"auto"` (default), or force a language: `"en"`, `"fr"`, `"es"`, `"de"`, …
 - `WATCH_DIRS` — folders to watch (default: Downloads + Desktop)
-- `HOTKEY_MODS` / `HOTKEY_KEY` — change the shortcut
 
 Prefer a different model (speed vs. accuracy)? Drop any ggml Whisper model in
 `models/` and set `WHISPER_MODEL`, or edit `MODEL_NAME` in `bin/transcribe.sh`.
