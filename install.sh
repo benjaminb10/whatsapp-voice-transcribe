@@ -27,7 +27,7 @@ else
   say "Model already present, skipping download"
 fi
 
-chmod +x "$REPO"/bin/*.sh
+chmod +x "$REPO"/bin/*.sh "$REPO"/bin/*.py
 
 say "Done. Final steps:"
 cat <<EOF
@@ -42,5 +42,12 @@ cat <<EOF
 
 3) In WhatsApp, right-click a voice note → "Save to Downloads".
    The transcription pops up and is copied to your clipboard.
+
+4) To export a whole chat with voice notes transcribed:
+
+     $REPO/bin/wa-export.py --list
+     $REPO/bin/wa-export.py "Chat name" --from 2026-09-01
+
+   (your terminal needs Full Disk Access)
 
 EOF
