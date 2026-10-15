@@ -10,7 +10,11 @@ bubble instantly shows the text, and it's copied to your clipboard.
 No cloud. No API key. No account. Nothing leaves your Mac — the transcription
 runs locally with [whisper.cpp](https://github.com/ggerganov/whisper.cpp).
 
-**New: export a whole conversation.** Pick a chat and a date range, get one
+**New: WhatsApp Web too.** Using WhatsApp in Safari, a Safari web app, or Chrome?
+Grab its voice notes, photos and videos straight from the browser cache, transcribed,
+without clicking anything. See [WhatsApp Web](#whatsapp-web-voice-notes-photos-videos).
+
+**Export a whole conversation.** Pick a chat and a date range, get one
 text file with every message in order, and every voice note already
 transcribed. No clicking through notes one by one. See
 [Export a whole chat](#export-a-whole-chat-with-voice-notes-transcribed).
@@ -123,6 +127,50 @@ bin/wa-export.py "Team" --from 2026-09-01 --format json -o team.json
   that never were show up as `(voice note not downloaded on this Mac)`.
 - WhatsApp's database format is undocumented and may change with an app update.
 
+## WhatsApp Web (voice notes, photos, videos)
+
+WhatsApp Web has no "Save to Downloads" for voice notes, and its chat export
+leaves them out (`<voice message omitted>`). But to play them, it keeps every
+media it has **displayed** in the browser's Cache Storage, already decrypted.
+`bin/wa-web-media.py` reads that cache directly: no browser automation, no clicks,
+the window can stay in the background.
+
+```bash
+# 1. note the time, open the chat in WhatsApp Web and scroll through it
+#    (a voice note is cached as soon as its bubble is on screen; no need to play it)
+# 2. pull everything displayed since then, and transcribe the voice notes
+bin/wa-web-media.py --since "2026-10-15 21:30" --kinds voice,image --transcribe --lang fr
+# a Chrome profile driven by Playwright/Puppeteer? point to it:
+bin/wa-web-media.py --since 2026-10-15 --chrome-profile ~/my-wa-profile
+```
+
+Each media is written to `~/Downloads/whatsapp-web-media/` (`.opus`, `.jpg`…),
+with a `.txt` next to each transcribed voice note, and listed on stdout:
+`cache time · kind · duration/size · file · transcript`.
+
+| Option | |
+|---|---|
+| `--since` | cache time lower bound, local time (required) |
+| `--kinds` | `voice` (default), `image`, `video`, comma-separated |
+| `--transcribe`, `--lang`, `-j` | transcribe voice notes, like `wa-export` (shared cache) |
+| `--chrome-profile` | extra Chrome profile dir to scan, repeatable (the default Chrome profiles are always scanned) |
+| `--min-image-kb` | skip smaller images: blurred previews, avatars (default 25) |
+| `--until`, `-o` | upper bound, output dir |
+
+Good to know:
+
+- **Cache time is the last time the media was displayed**, not when it was
+  sent, and it moves forward each time the chat is shown again. Note the time
+  right before opening the chat and use it as `--since`; avoid a tight `--until`.
+- The cache also holds media from **other chats** displayed after `--since`:
+  keep only those of the chat you want (the transcript makes it obvious).
+- To get the text, use WhatsApp Web's own **⋮ › Export chat**, then put each
+  voice note back in place (durations shown in quoted replies help).
+- Media never displayed in WhatsApp Web aren't there, and the cache is LRU:
+  extract soon after opening the chat.
+- Supports Safari, Safari "Add to Dock" web apps, and Chrome (only WhatsApp's
+  media cache is read, stickers and other sites are ignored).
+
 ## Configuration
 
 Edit the top of `hammerspoon/whatsapp-transcribe.lua`:
@@ -141,7 +189,7 @@ Lua and Python.
 
 ## Limitations
 
-- macOS + the native WhatsApp app only.
+- macOS. The native WhatsApp app for transcribe-on-save and `wa-export`; WhatsApp Web (Safari / Chrome) for `wa-web-media`.
 - `wa-export` relies on WhatsApp's internal database layout, which can change
   without notice.
 - You can't add a literal "Transcribe" item *inside* WhatsApp's menu (it's a
