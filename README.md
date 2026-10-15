@@ -14,6 +14,11 @@ runs locally with [whisper.cpp](https://github.com/ggerganov/whisper.cpp).
 Grab its voice notes, photos and videos straight from the browser cache, transcribed,
 without clicking anything. See [WhatsApp Web](#whatsapp-web-voice-notes-photos-videos).
 
+**New: one chat, every media labelled.** `wa-web-chat` asks the open WhatsApp
+Web page which voice note or photo belongs to which chat, who sent it and when.
+No guessing, and your other chats are never touched. See
+[One chat from WhatsApp Web](#one-chat-from-whatsapp-web-sender-and-time-included).
+
 **Export a whole conversation.** Pick a chat and a date range, get one
 text file with every message in order, and every voice note already
 transcribed. No clicking through notes one by one. See
@@ -171,6 +176,50 @@ Good to know:
 - Supports Safari, Safari "Add to Dock" web apps, and Chrome (only WhatsApp's
   media cache is read, stickers and other sites are ignored).
 
+## One chat from WhatsApp Web (sender and time included)
+
+`wa-web-media.py` reads the browser cache blindly: a file there has no chat, no
+sender, and only the time it was last *displayed*. `bin/wa-web-chat.mjs` asks the
+WhatsApp Web page instead. The page keeps every loaded message in memory with its
+sender, send time, caption, duration and the SHA-256 of its file, and that hash
+is also the key of the decrypted file in the media cache. So each file comes out
+labelled, and only the chat you name is read.
+
+It talks to Chrome over the DevTools protocol, read-only (it never clicks, types
+or sends), with no dependency beyond Node 22+.
+
+```bash
+# 1. a Chrome with a debug port and a profile of its own (log in to WhatsApp Web once)
+open -na "Google Chrome" --args --user-data-dir="$HOME/wa-chrome" \
+  --remote-debugging-port=9222 https://web.whatsapp.com
+# 2. open the chat and scroll back over the period you want
+# 3. pull its media, voice notes transcribed
+bin/wa-web-chat.mjs --chat "Family" --since "2026-10-14 08:00" --transcribe --lang fr
+```
+
+One line per media on stdout (or `--json`):
+`send time · sender · kind · duration · file · transcript or caption`.
+Files are named `YYYYMMDD-HHMMSS-<sender>-<id>.<ext>`, with a `.txt` next to each
+transcribed voice note.
+
+| Option | |
+|---|---|
+| `--chat` | part of the chat or group name (it must match a single chat) |
+| `--since` | keep messages **sent** after this local time |
+| `--kinds` | `voice,image` (default), add `video` |
+| `--transcribe`, `--lang` | transcribe voice notes, same cache as `wa-export` |
+| `--port`, `-o`, `--json` | debug port (9222), output folder, JSON output |
+
+Good to know:
+
+- Only messages **loaded** in the page are seen: scroll back in the chat first.
+  The tool tells you when `--since` is older than what the page holds.
+- A file is there only if its bubble was **displayed**. Photos and voice notes
+  are cached as soon as you scroll past them; videos often are not.
+- Opening a chat in WhatsApp Web marks it as read, as usual. The tool itself
+  opens nothing.
+- It relies on WhatsApp Web's internal modules, which can change without notice.
+
 ## Configuration
 
 Edit the top of `hammerspoon/whatsapp-transcribe.lua`:
@@ -185,11 +234,11 @@ Prefer a different model (speed vs. accuracy)? Drop any ggml Whisper model in
 
 Everything is local. The audio never leaves your machine, there is no network
 call, no telemetry, no key. You can read every line — it's a few hundred lines of shell,
-Lua and Python.
+Lua, Python and JavaScript. `wa-web-chat` only talks to your own Chrome, on localhost.
 
 ## Limitations
 
-- macOS. The native WhatsApp app for transcribe-on-save and `wa-export`; WhatsApp Web (Safari / Chrome) for `wa-web-media`.
+- macOS. The native WhatsApp app for transcribe-on-save and `wa-export`; WhatsApp Web (Safari / Chrome) for `wa-web-media`; Chrome with a debug port for `wa-web-chat`.
 - `wa-export` relies on WhatsApp's internal database layout, which can change
   without notice.
 - You can't add a literal "Transcribe" item *inside* WhatsApp's menu (it's a
